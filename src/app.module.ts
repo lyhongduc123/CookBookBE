@@ -7,7 +7,9 @@ import { validationSchema } from './config/validation.schema';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { SearchModule } from './modules/search/search.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FollowsModule } from './modules/follows/follows.module';
+import { MailerModule } from './modules/mailer/mailer.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -36,7 +38,9 @@ import { AppService } from './app.service';
     AuthModule,
     PostsModule,
     SearchModule,
+    NotificationsModule,
     FollowsModule,
+    MailerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

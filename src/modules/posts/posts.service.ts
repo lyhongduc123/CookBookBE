@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 import { CreateCommentDto, CreatePostDto, FullReponseCommentDto, FullReponsePostDto, LiteReponsePostDto, ReponseUserDto } from './dtos/create-post.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { User } from '../auth/entities/user.entity';
-
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class PostsService {
@@ -16,6 +16,7 @@ export class PostsService {
     @InjectRepository(Post) private postsRepository: Repository<Post>,
     @InjectRepository(User) private usersRepository: Repository<User>,
     @InjectRepository(Comment) private commentsRepository: Repository<Comment>,
+    private mailerService: MailerService,
   ) {}
 
   async createPost(createPostDto: CreatePostDto, userId: number): Promise<any> {

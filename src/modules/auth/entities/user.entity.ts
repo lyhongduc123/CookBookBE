@@ -9,6 +9,7 @@ import {
   } from 'typeorm';
   import { Post } from '../../posts/entities/post.entity';
   import { Follow } from '../../follows/entities/follow.entity';
+  import { Notification } from '../../notifications/entities/notification.entity';
   import { Exclude } from 'class-transformer';
   
   @Entity()
@@ -58,6 +59,9 @@ import {
     @ManyToMany(() => Post)
     @JoinTable()
     favorites: Post[];
+
+    @OneToMany(() => Notification, (notification) => notification.user)
+    notifications: Notification[];
     
     @Column({ nullable: true, length: 500 })
     bio: string;

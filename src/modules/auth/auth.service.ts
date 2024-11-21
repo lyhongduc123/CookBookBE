@@ -9,6 +9,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { MailerService } from '../mailer/mailer.service';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import { Post } from '../posts/entities/post.entity';
@@ -22,6 +23,7 @@ export class AuthService {
     @InjectRepository(User) private usersRepository: Repository<User>,
     @InjectRepository(Post) private postsRepository: Repository<Post>,
     private jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
   async getUserIdFromToKen(token: string): Promise<number> {
     const payload = this.jwtService.decode(token);

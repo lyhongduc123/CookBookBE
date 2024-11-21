@@ -4,12 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Follow } from './entities/follow.entity';
 import { Repository } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FollowsService {
   constructor(
     @InjectRepository(Follow) private followsRepository: Repository<Follow>,
     @InjectRepository(User) private usersRepository: Repository<User>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async followUser(targetUserId: number, currentUserId: number): Promise<any> {

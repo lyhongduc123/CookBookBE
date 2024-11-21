@@ -8,6 +8,7 @@ import { AuthController } from './controllers/auth.controller';
 import { User } from './entities/user.entity';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { MailerModule } from '../mailer/mailer.module';
 import { Post } from '../posts/entities/post.entity';
 
 @Module({
@@ -23,6 +24,7 @@ import { Post } from '../posts/entities/post.entity';
       }),
       inject: [ConfigService],
     }),
+    MailerModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
