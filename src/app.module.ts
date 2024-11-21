@@ -4,6 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
+import { AuthModule } from './modules/auth/auth.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { SearchModule } from './modules/search/search.module';
+import { FollowsModule } from './modules/follows/follows.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -29,6 +33,10 @@ import { AppService } from './app.service';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
+    PostsModule,
+    SearchModule,
+    FollowsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
