@@ -9,7 +9,7 @@ export class RegisterDto {
   @ApiProperty({ description: 'Tên đăng nhập', example: 'hoapri123' })
   username: string;
 
-  @IsEmail()
+
   @ApiProperty({ description: 'Email', example: 'hoapri123@gmail.com' })
   email: string;
 

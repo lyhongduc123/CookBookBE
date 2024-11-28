@@ -156,6 +156,13 @@ import {
       return this.postsService.deleteComment(commentId, req.user.id);
     }
 
-    
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    @Post('recipe/')
+    @ApiOperation({ summary: 'Tìm công thức' })
+    @ApiResponse({ status: 200, description: 'Tìm công thức thành công' })
+    createRecipe(@Body('commentId') commentId: number, @Request() req) {
+      return this.postsService.deleteComment(commentId, req.user.id);
+    }
 }
   

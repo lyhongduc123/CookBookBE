@@ -12,6 +12,6 @@ export class AppController {
   @ApiOperation({ summary: 'Giới thiệu về dự án' })
   @ApiResponse({ status: 200, description: 'Trả OK' })
   getHealth() {
-    return this.appService.getProject();
+    return this.appService.getProject()
   }
 }

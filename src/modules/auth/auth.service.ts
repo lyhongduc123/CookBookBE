@@ -1,5 +1,5 @@
 // src/modules/auth/auth.service.ts
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 import { ForgotDto } from './dtos/forgot.dto';
@@ -13,8 +13,11 @@ import { MailerService } from '../mailer/mailer.service';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import { Post } from '../posts/entities/post.entity';
-import { FullReponsePostDto, LiteReponsePostDto } from '../posts/dtos/create-post.dto';
+import { FullReponsePostDto, LiteReponsePostDto, ReponseUserDto } from '../posts/dtos/create-post.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
+import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
+import * as fileType from 'file-type';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +27,13 @@ export class AuthService {
     @InjectRepository(Post) private postsRepository: Repository<Post>,
     private jwtService: JwtService,
     private mailerService: MailerService,
-  ) {}
+  ) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    })
+  }
   async getUserIdFromToKen(token: string): Promise<number> {
     const payload = this.jwtService.decode(token);
     return payload['sub'];
@@ -43,16 +52,7 @@ export class AuthService {
         await this.usersRepository.delete(existingUser.id);
       }
       const hashedPassword = await bcrypt.hash(password, 10);
-      const test1 = await bcrypt.hash("Password123", 10);
-      const test2 = await bcrypt.hash("Password123", 10);
-      const test3 = await bcrypt.hash("Password123", 10);
-      const test4 = await bcrypt.hash("Password123", 10);
-      const test5 = await bcrypt.hash("Password123", 10);
-      console.log(test1);
-      console.log(test2);
-      console.log(test3);
-      console.log(test4);
-      console.log(test5);
+
 
       const user = this.usersRepository.create({
         username,
@@ -96,7 +96,7 @@ export class AuthService {
     const payload = { sub: user.id, username: user.username, roles: user.roles };
     const token = this.jwtService.sign(payload);
 
-    return { access_token: token, message: 'Đăng nhập thành công' };
+    return { access_token: token, message: 'Đăng nhập thành công', user: new ReponseUserDto(user) };
   }
 
   async verifyEmail(token: string): Promise<string> {
@@ -295,4 +295,110 @@ export class AuthService {
       return {nextPage: "false", favorites: favorites.slice(startIndex, startIndex + itemsPerPage).map(fav => new LiteReponsePostDto(fav))};
     }
   }
+  /*
+  async uploadImage(file: Express.Multer.File): Promise<any> {
+    try {
+      if(!file) return {error: "No file uploaded"}
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: 'uploads',
+      });
+      console.log(result.secure_url);
+      return result.secure_url;
+
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Failed to upload image');
+    }
+  }
+    */
+  async uploadImage(buffer: Buffer): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        const readable = new Readable();
+        readable.push(buffer);
+        readable.push(null);
+        
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'uploads' },
+          (error, result) => {
+            if (error) {
+              reject(new InternalServerErrorException('Failed to upload image to Cloudinary'));
+            }
+            console.log({imageURL: result.secure_url})
+            resolve(
+              {imageURL: result.secure_url}
+            );
+          }
+        );
+
+        readable.pipe(uploadStream);
+      });
+
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to upload image');
+    }
+  }
+  async sendImageToAI(buffer: Buffer): Promise<any> {
+    try{
+      const { GoogleGenerativeAI } = require("@google/generative-ai");
+      
+      const genAI = new GoogleGenerativeAI("AIzaSyBEEXfHU_NM0mQUIrqitWBcc-JzIR-3ccw");
+      function fileToGenerativePart(buf, mimeType) {
+        return {
+          inlineData: {
+            data: buf.toString("base64"),
+            mimeType
+          },
+        };
+      }
+      const imageParts = [
+        fileToGenerativePart(buffer, "image/jpeg")
+      ]
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const generationConfig = {
+        temperature: 0,
+        topP: 0,
+        topK: 0,
+        maxOutputTokens: 8192,
+        responseMimeType: "text/plain",
+      };
+      const chatSession = model.startChat({
+        generationConfig,
+        history: [
+        ],
+      });
+      const prompt = 
+      `
+
+      Bạn là trợ lý AI chuyên nấu ăn. Khi nhận hình ảnh nguyên liệu, bạn phải phân tích và liệt kê chính xác các nguyên liệu (bao gồm số lượng cụ thể như "1kg", "2 thìa canh", "3 quả").
+      Sau đó, từ những nguyên liệu đã phân tích được, hãy tạo ra 3-6 món ăn nấu được luôn với những nguyên liệu đó, không cần chuẩn bị thêm.
+      Mỗi món ăn tạo ra phải thật thực tế, chỉ được sử dụng nguyên liệu có trong danh sách, nếu món ăn sử dụng bất kkyf nguyên liệu nào khác thì bỏ qua luôn món ăn đó, trả về kết quả.
+      Kết quả trả về dưới dạng JSON như sau:
+
+      {
+        "ingredients": [
+          {"name": "Tên nguyên liệu", "quantity": "Số lượng chính xác"},
+          {"name": "Tên nguyên liệu", "quantity": "Số lượng chính xác"}
+        ],
+        "recipes": [
+          "Tên món ăn 1 (Danh sách nguyên liệu)",
+          "Tên món ăn 2 (Danh sách nguyên liệu)"
+        ]
+      }
+
+      `
+      
+      //const result = await model.generateContent([prompt, ...imageParts]);
+      const result = await chatSession.sendMessage([prompt, ...imageParts]);
+
+      const data = result.response.text();
+      const parsedData = JSON.parse(data.slice(7, data.length-4));
+      return parsedData;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Failed to analyze image');
+    }
+
+  }
 }
+
