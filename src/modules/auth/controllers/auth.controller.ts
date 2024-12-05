@@ -155,8 +155,7 @@ export class AuthController {
     return await this.authService.uploadImage(file.buffer);
   }
   
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+
   @Post('airecipe/uploadImage')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -171,5 +170,5 @@ export class AuthController {
     console.log("ok");
     return await this.authService.sendImageToAI(file.buffer);
   }
-  
+      
 }

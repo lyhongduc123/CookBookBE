@@ -356,11 +356,51 @@ export class AuthService {
       ]
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const generationConfig = {
-        temperature: 0,
-        topP: 0,
-        topK: 0,
+        temperature: 0.12,
+        topP: 0.95,
+        topK: 40,
         maxOutputTokens: 8192,
-        responseMimeType: "text/plain",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          description: "Danh sách nguyên liệu phân tích được từ trong ảnh và tên các món ăn chế biến được chỉ với những nguyên liệu đó",
+          properties: {
+            ingredients: {
+              type: "array",
+              description: "Danh sách nguyên liệu phân tích được từ trong ảnh",
+              items: {
+                type: "object",
+                description: "Nguyên liệu phân tích được từ trong ảnh",
+                properties: {
+                  name: {
+                    type: "string",
+                    description: "Tên nguyên liệu"
+                  },
+                  quantity: {
+                    type: "string",
+                    description: "Số lượng nguyên liệu"
+                  }
+                },
+                required: [
+                  "name",
+                  "quantity"
+                ]
+              }
+            },
+            recipes: {
+              type: "array",
+              description: "Danh sách món ăn chế biến được chỉ với những nguyên liệu có sẵn, không cần chuẩn bị thêm",
+              items: {
+                type: "string",
+                description: "Tên món ăn"
+              }
+            }
+          },
+          required: [
+            "ingredients",
+            "recipes"
+          ]
+        },
       };
       const chatSession = model.startChat({
         generationConfig,
@@ -370,21 +410,10 @@ export class AuthService {
       const prompt = 
       `
 
-      Bạn là trợ lý AI chuyên nấu ăn. Khi nhận hình ảnh nguyên liệu, bạn phải phân tích và liệt kê chính xác các nguyên liệu (bao gồm số lượng cụ thể như "1kg", "2 thìa canh", "3 quả").
-      Sau đó, từ những nguyên liệu đã phân tích được, hãy tạo ra 3-6 món ăn nấu được luôn với những nguyên liệu đó, không cần chuẩn bị thêm.
-      Mỗi món ăn tạo ra phải thật thực tế, chỉ được sử dụng nguyên liệu có trong danh sách, nếu món ăn sử dụng bất kkyf nguyên liệu nào khác thì bỏ qua luôn món ăn đó, trả về kết quả.
-      Kết quả trả về dưới dạng JSON như sau:
-
-      {
-        "ingredients": [
-          {"name": "Tên nguyên liệu", "quantity": "Số lượng chính xác"},
-          {"name": "Tên nguyên liệu", "quantity": "Số lượng chính xác"}
-        ],
-        "recipes": [
-          "Tên món ăn 1 (Danh sách nguyên liệu)",
-          "Tên món ăn 2 (Danh sách nguyên liệu)"
-        ]
-      }
+      Bạn là trợ lý AI chuyên phân tích nguyên liệu và nấu ăn. Tôi sẽ gửi cho bạn một hình ảnh là các nguyên liệu nấu ăn, tôi cần bạn phân tích hình ảnh đó và tìm những món ăn nấu được ngay từ những nguyên liệu đó mà không cần mua thêm. Khi nhận hình ảnh nguyên liệu, bạn phải phân tích và liệt kê chính xác các nguyên liệu có trong ảnh (bao gồm số lượng cụ thể như "1kg", "2 thìa canh", "3 quả").
+      Sau đó hãy tạo ra 3-6 món ăn nấu được luôn với những nguyên liệu đã có, không cần chuẩn bị thêm, chỉ dùng những nguyên liệu đã có để tạo món ăn, không tạo những món ăn mà thiếu nguyên liệ.
+      Mỗi món ăn tạo ra phải thật hợp lý, thực tế, ăn được. Chỉ dùng những nguyên liệu đã có để tạo món ăn, không tạo những món ăn mà thiếu nguyên liệu.
+      Kết quả trả về là tiếng việt.
 
       `
       
@@ -392,7 +421,9 @@ export class AuthService {
       const result = await chatSession.sendMessage([prompt, ...imageParts]);
 
       const data = result.response.text();
-      const parsedData = JSON.parse(data.slice(7, data.length-4));
+      console.log(data);
+      const parsedData = JSON.parse(data);
+      console.log(parsedData);
       return parsedData;
     } catch (error) {
       console.log(error);
