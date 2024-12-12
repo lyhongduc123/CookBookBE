@@ -3,8 +3,8 @@ import { Controller, Post, Body, Get, Query, Req, Put, Param, Request as Request
 
 import { AuthService } from '../auth.service';
 import { RegisterDto } from '../dtos/register.dto';
-import { LoginDto } from '../dtos/login.dto';
-import { ResetPasswordDto } from '../dtos/reset-password.dto';
+import { LoginDto, TokenDto } from '../dtos/login.dto';
+import { ResetPassword1Dto, ResetPassword2Dto } from '../dtos/reset-password.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ForgotDto } from '../dtos/forgot.dto';
 import { Request as Request2 } from 'express';
@@ -13,6 +13,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ChangePasswordDto } from '../dtos/change-password.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, memoryStorage } from 'multer';
+import { GetRecipeDto } from '../dtos/aichef.dto';
 
 @ApiTags('auth')
 @Controller('')
@@ -33,7 +34,13 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Đăng nhập thành công' })
   @ApiResponse({ status: 401, description: 'Sai tên đăng nhập hoặc mật khẩu' })
   login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    try {
+      return this.authService.login(loginDto);
+    }
+    catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   @Get('auth/verify-email')
@@ -46,20 +53,27 @@ export class AuthController {
 
   @Post('auth/forgot-password')
   @ApiOperation({ summary: 'Quên mật khẩu' })
-  @ApiResponse({ status: 200, description: 'Liên kết đặt lại mật khẩu đã được gửi nếu email tồn tại' })
+  @ApiResponse({ status: 200, description: 'Gửi code đến mail' })
   @ApiResponse({ status: 400, description: 'Email không hợp lệ' })
-  forgotPassword(@Body() forgotDto: ForgotDto, @Req() req: Request2) {
-    
+  forgotPassword(@Body() forgotDto: ForgotDto) {
     return this.authService.forgotPassword(forgotDto );
   }
 
+  @Post('auth/reset-password-code')
+  @ApiOperation({ summary: 'Đặt lại mật khẩu' })
+  @ApiResponse({ status: 200, description: 'Đặt lại mật khẩu thành công' })
+  @ApiResponse({ status: 400, description: 'Token không hợp lệ hoặc đã hết hạn' })
+  resetPasswordCode(@Body() resetPassword1Dto: ResetPassword1Dto) {
+    return this.authService.resetPasswordCode(resetPassword1Dto);
+  }
   @Post('auth/reset-password')
   @ApiOperation({ summary: 'Đặt lại mật khẩu' })
   @ApiResponse({ status: 200, description: 'Đặt lại mật khẩu thành công' })
   @ApiResponse({ status: 400, description: 'Token không hợp lệ hoặc đã hết hạn' })
-  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  resetPassword(@Body() resetPassword2Dto: ResetPassword2Dto) {
+    return this.authService.resetPassword(resetPassword2Dto);
   }
+  
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('auth/change-password')
@@ -67,6 +81,21 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công' })
   changePassword(@Request1() req, @Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(req.user.id, changePasswordDto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('auth/logout')
+  @ApiOperation({ summary: 'Đăng xuất' })
+  logout(@Request1() req) {
+    return this.authService.logout(req.user.id);
+  }
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('auth/set-token')
+  @ApiOperation({ summary: 'Set tokenFCM' })
+  setTokenFCM(@Request1() req, @Body() tokenDto: TokenDto) {
+    return this.authService.setTokenFCM(tokenDto, req.user.id);
   }
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -98,6 +127,11 @@ export class AuthController {
     return this.authService.deleteFromFavorites(postId, req.user.id);
   }
 
+  @Delete('favorite/check/:recipeId/:userId')
+  @ApiOperation({ summary: 'Kiểm tra userId đã favorite recipeId chưa' })
+  checkFavorite(@Param('recipeId') postId: number, @Param('userId') userId: number) {
+    return this.authService.checkFavorite(postId, userId);
+  }
   
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -118,7 +152,21 @@ export class AuthController {
   async getUserProfile(@Param('userId') userId: number) {
     return this.authService.getProfileByUserId(userId);
   }
-
+  @Get('search/username/:username/:page')
+  @ApiOperation({ summary: 'Tìm kiếm người dùng theo username' })
+  @ApiResponse({ status: 200, description: 'Tìm kiếm thành công' })
+  @ApiResponse({ status: 404, description: 'Err' })
+  async searchUserByUsername(@Param('username') username: string, @Param('page') page: number) {
+    return this.authService.searchUserByUsername(username, page);
+  }
+  @Get('search/name/:name/:page')
+  @ApiOperation({ summary: 'Tìm kiếm người dùng theo name' })
+  @ApiResponse({ status: 200, description: 'Thông tin hồ sơ người dùng' })
+  @ApiResponse({ status: 404, description: 'Err' })
+  async searchUserByName(@Param('name') name: string, @Param('page') page: number) {
+    return this.authService.searchUserByName(name, page);
+  }
+  
   /*
   @Post('profile/uploadImage')
   @UseInterceptors(
@@ -140,7 +188,7 @@ export class AuthController {
   }
 }
 */
-@Post('uploadImage')
+  @Post('uploadImage')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(), 
@@ -167,8 +215,12 @@ export class AuthController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
-    console.log("ok");
     return await this.authService.sendImageToAI(file.buffer);
   }
-      
+  @Post('airecipe/getRecipe')
+  @ApiOperation({ summary: 'Gen công thức nấu ăn' })
+  async getRecipesByIngredients(@Body() getRecipeDto: GetRecipeDto) {
+    return await this.authService.getRecipesByIngredients(getRecipeDto);
+  }
+  
 }

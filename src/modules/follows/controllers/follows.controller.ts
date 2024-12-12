@@ -5,11 +5,11 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('follows')
-@ApiBearerAuth()
+
 @Controller('follows')
 export class FollowsController {
   constructor(private readonly followsService: FollowsService) {}
-
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post(':userId')
   @ApiOperation({ summary: 'Theo dõi người dùng khác' })
@@ -19,7 +19,7 @@ export class FollowsController {
   followUser(@Param('userId') userId: number, @Request() req) {
     return this.followsService.followUser(userId, req.user.id);
   }
-
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':userId')
   @ApiOperation({ summary: 'Hủy theo dõi người dùng' })
@@ -44,5 +44,10 @@ export class FollowsController {
   @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
   getFollowing(@Param('userId') userId: number) {
     return this.followsService.getFollowing(userId);
+  }
+  @Get('follow/check/:followerId/:followingId')
+  @ApiOperation({ summary: 'Kiểm tra followerId đã theo dõi followingId chưa' })
+  checkFollow(@Param('followerId') followerId: number, @Param('followingId') followingId: number) {
+    return this.followsService.checkFollow(followerId,followingId);
   }
 }

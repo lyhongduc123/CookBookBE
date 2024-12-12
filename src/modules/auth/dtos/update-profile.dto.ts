@@ -19,4 +19,9 @@ export class UpdateProfileDto {
   @IsUrl()
   @ApiPropertyOptional({ description: 'URL avatar mới' })
   avatar?: string;
+  
+  @IsOptional()
+  @IsUrl()
+  @ApiPropertyOptional({ description: 'URL banner mới' })
+  banner?: string;
 }

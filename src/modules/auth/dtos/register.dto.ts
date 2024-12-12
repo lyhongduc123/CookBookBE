@@ -1,5 +1,5 @@
 // src/modules/auth/dtos/register.dto.ts
-import { IsString, IsEmail, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsEmail, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -9,7 +9,7 @@ export class RegisterDto {
   @ApiProperty({ description: 'Tên đăng nhập', example: 'hoapri123' })
   username: string;
 
-
+  @IsEmail()
   @ApiProperty({ description: 'Email', example: 'hoapri123@gmail.com' })
   email: string;
 
@@ -21,4 +21,8 @@ export class RegisterDto {
   })
   @ApiProperty({ description: 'Mật khẩu', example: 'Password123' })
   password: string;
+
+  @IsOptional()
+  @ApiProperty({ description: 'tên', example: 'Heo Con' })
+  name?: string;
 }

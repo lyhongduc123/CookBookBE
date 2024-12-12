@@ -1,5 +1,5 @@
 // src/modules/notifications/entities/notification.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 
 @Entity()
@@ -8,13 +8,10 @@ export class Notification {
   id: number;
 
   @Column()
-  type: string; // e.g., 'like', 'comment', 'follow'
+  type: string; 
 
   @Column()
   message: string;
-
-  @Column()
-  relatedId: number; // e.g., recipeId, commentId, userId
 
   @Column({ default: false })
   isRead: boolean;
@@ -24,4 +21,15 @@ export class Notification {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column()
+  updatedAt?: Date;
+
+  @Column()
+  relatedID: number;
+  
+  @Column()
+  imageURL: string;
 }
+
+

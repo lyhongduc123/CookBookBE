@@ -42,6 +42,41 @@ export class ReponseUserDto{
   @IsOptional()
   avatar?: string;
 }
+export class ReponseUserProfileDto{
+  constructor(user?: User, totalFollowing?: number, totalFollowers?: number) {
+    if (user) {
+        this.id = user.id;
+        this.username = user.username;
+        this.name = user.name;
+        this.avatar = user.avatar;
+        this.totalFollowing = totalFollowing;
+        this.totalFollowers = totalFollowers;
+    }
+  }
+  @IsNumber()
+  @IsNotEmpty()
+  id: number;
+
+  @IsString()
+  @IsNotEmpty()
+  username: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsUrl()
+  @IsOptional()
+  avatar?: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  totalFollowing?: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  totalFollowers?: number;
+}
 export class LiteReponsePostDto{
   constructor(post?: Post) {
     if (post) {
@@ -54,6 +89,8 @@ export class LiteReponsePostDto{
       this.totalView = post.totalView;
       this.totalComment = post.totalComment;
       this.totalLike = post.totalLike;
+      this.createdAt = post.createdAt;
+      this.updatedAt = post.updatedAt;
     }
   }
   @IsNotEmpty()
@@ -86,6 +123,9 @@ export class LiteReponsePostDto{
   totalFavorite?: number;
   totalComment?: number;
   totalLike?: number;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export class FullReponsePostDto{
@@ -102,6 +142,8 @@ export class FullReponsePostDto{
       this.totalLike = post.totalLike;
       this.ingredient = post.ingredient;
       this.steps = post.steps;
+      this.createdAt = post.createdAt;
+      this.updatedAt = post.updatedAt;
     }
   }
   @IsNotEmpty()
@@ -146,7 +188,8 @@ export class FullReponsePostDto{
   totalComment?: number;
   totalLike?: number;
 
-  
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 export class CreatePostDto {
   @IsString()
@@ -205,6 +248,8 @@ export class FullReponseCommentDto{
       this.content = comment.content;
       this.user = new ReponseUserDto(comment.user);
       this.createdAt = comment.createdAt;
+      this.totalLike = comment.totalLike;
+      this.isLiked = comment.isLiked;
     }
   }
   nextPage: boolean;
@@ -222,4 +267,9 @@ export class FullReponseCommentDto{
   @IsNotEmpty()
   createdAt: Date
 
+  @IsOptional()
+  totalLike?: number;
+
+  @IsOptional()
+  isLiked?: boolean;
 }

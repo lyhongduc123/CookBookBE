@@ -1,5 +1,5 @@
 // src/modules/auth/dtos/login.dto.ts
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -14,4 +14,13 @@ export class LoginDto {
   @MaxLength(20)
   @ApiProperty({ description: 'Mật khẩu', example: 'Password123' })
   password: string;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Token FCM'})
+  tokenFCM?: string;
+}
+export class TokenDto {
+  @IsString()
+  @ApiProperty({ description: 'Token FCM' })
+  token: string;
 }

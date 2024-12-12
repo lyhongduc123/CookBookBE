@@ -10,6 +10,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     RelationCount,
+    Index,
   } from 'typeorm';
   import { User } from '../../auth/entities/user.entity';
   import { Comment } from './comment.entity';
@@ -37,6 +38,7 @@ import {
     totalComment: number;
 
     @Column({default: 0})
+    @Index()
     totalView: number;
 
     @Column({default: 0})
@@ -63,12 +65,13 @@ import {
     @ManyToMany(() => User)
     @JoinTable()
     likes: User[];
-    
+
+    @Index()
     @CreateDateColumn()
     createdAt: Date;
   
     @UpdateDateColumn()
-    updatedAt: Date;
+    updatedAt: Date
 
   }
   
