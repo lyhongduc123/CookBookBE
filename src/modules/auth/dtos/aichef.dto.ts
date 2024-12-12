@@ -23,9 +23,10 @@ export class GetRecipeDto {
         description: 'Danh sách tên các món ăn cần nấu từ những nguyên liệu trên',
         example: ['Thịt lợn nướng', 'Gà luộc']
     })
-    @IsArray()
-    @ArrayMinSize(1)
-    recipes: string[];
+    @IsOptional()
+    recipes?: string[];
+
+
     @IsOptional()
     @ApiProperty({
         description: 'Ghi chú',

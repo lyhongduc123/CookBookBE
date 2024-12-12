@@ -81,6 +81,7 @@ export class NotificationsService {
       let title = "Thông báo";
       let message = "Bạn có thông báo mới";
       let body = "Bạn có thông báo mới";
+      if(!imageU) imageU = "https://cdn-icons-png.flaticon.com/512/3119/3119338.png";
       const user = await this.usersRepository.findOne({ where: { id: userId } });
       if(!user){
         return;

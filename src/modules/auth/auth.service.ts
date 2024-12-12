@@ -20,6 +20,7 @@ import { Readable } from 'stream';
 import * as fileType from 'file-type';
 import { randomInt } from 'crypto';
 import { GetRecipeDto } from './dtos/aichef.dto';
+import { get } from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -594,7 +595,22 @@ Kết quả trả về là tiếng việt.
         history: [
         ],
       });
-      const prompt = 
+      let prompt: any;
+      prompt =
+`
+Nhập vai thành một đầu bếp chuyên nghiệp, hãy giúp tôi xây dựng các công thức nấu ăn chỉ với những nguyên liệu của tôi, không được sử dụng thêm nguyên liệu nào khác.
+Các món ăn phải thực tế, có thật, ăn được.
+Dưới đây là danh sách nguyên liệu của tôi:
+${JSON.stringify(getRecipeDto.ingredients, null, 2)}
+Chỉ được sử dụng những nguyên liệu trên, tạo cho tôi những nguyên liệu và các bước để nấu các món ăn thật ngon từ những nguyên liệu đó.
+Các bước nấu ăn phải đủ: sơ chế nguyên liệu, chế biến món ăn, trình bày món ăn.
+Các bước hướng dẫn phải thật hài hước, thú vị, lém lỉnh, bắt chước cách nói chuyện hài hước của giới trẻ, bắt chước cách sử dụng những từ ngữ trending, những từ giới trẻ hay dùng. 
+Pha các trò đùa, câu chuyện, tình huống hài hước vào bước chế biến món ăn.
+Có thể ẩn dụ trêu đùa (nội dung người lớn nhưng tế nhị).
+`;
+
+      if(getRecipeDto.recipes){
+prompt = 
 `
 Nhập vai thành một đầu bếp chuyên nghiệp, hãy giúp tôi xây dựng các công thức nấu ăn chỉ với những nguyên liệu của tôi, không được sử dụng thêm nguyên liệu nào khác.
 Các món ăn phải thực tế, có thật, ăn được.
@@ -606,10 +622,8 @@ Các bước nấu ăn phải đủ: sơ chế nguyên liệu, chế biến món
 Các bước hướng dẫn phải thật hài hước, thú vị, lém lỉnh, bắt chước cách nói chuyện hài hước của giới trẻ, bắt chước cách sử dụng những từ ngữ trending, những từ giới trẻ hay dùng. 
 Pha các trò đùa, câu chuyện, tình huống hài hước vào bước chế biến món ăn.
 Có thể ẩn dụ trêu đùa (nội dung người lớn nhưng tế nhị).
-
 `
-      //const result = await model.generateContent([prompt, ...imageParts]); 
-
+      }
       let result: any;
       if(getRecipeDto.note){
         const note = 
@@ -623,10 +637,12 @@ ${JSON.stringify(getRecipeDto.note, null, 2)}
       {
         result = await chatSession.sendMessage(prompt);
       }
+      console.log('ok2');
       const data = result.response.text();
       const parsedData = JSON.parse(data);
       return parsedData;
     } catch (error) {
+      console.log(error);
       throw new Error('Failed get recipes by ingredients');
     }
   }

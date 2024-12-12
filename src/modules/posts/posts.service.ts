@@ -345,54 +345,63 @@ export class PostsService {
   }
   */
   async getNewsfeed(userId: number, limit: number): Promise<any> {
-    console.log('getNewsfeed1');
-    const user = await this.usersRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.viewedPosts', 'viewedPosts')
-      .leftJoinAndSelect('user.following', 'following')
-      .leftJoinAndSelect('following.following', 'followingUser')
-      .select(['user.id', 'viewedPosts', 'following', 'followingUser.id'])
-      .where('user.id = :userId', { userId })
-      .getOne();
-      console.log('getNewsfeed2');
-    const followedUserIds = user.following.map(f => f.following.id);
-    const queryBuilder = this.postsRepository.createQueryBuilder('post')
-      .leftJoinAndSelect('post.author', 'author')
-      .where('post.id NOT IN (:...viewedPostIds)', { 
-        viewedPostIds: user.viewedPosts.map(p => p.id) 
-      })
-      .orWhere('(post.authorId = :userId AND post.totalComment > 0)', { 
-        userId 
+    try{
+      console.log('getNewsfeed1');
+      const user = await this.usersRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.viewedPosts', 'viewedPosts')
+        .leftJoinAndSelect('user.following', 'following')
+        .leftJoinAndSelect('following.following', 'followingUser')
+        .select(['user.id', 'viewedPosts', 'following', 'followingUser.id'])
+        .where('user.id = :userId', { userId })
+        .getOne();
+        console.log('getNewsfeed2');
+      const followedUserIds = user.following.map(f => f.following.id);
+      const viewedPostIds = user.viewedPosts.map(p => p.id);
+
+      const query = this.postsRepository.createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author');
+
+      if (viewedPostIds.length > 0) {
+        query.where('post.id NOT IN (:viewedPostIds)', { viewedPostIds });
+      } else {
+        query.where('1=1');
+      }
+
+      query.orWhere('post.authorId = :userId AND post.totalComment > 0', { userId });
+
+      const posts = await query.getMany();
+      console.log('getNewsfeed3');
+      // Get posts and calculate scores
+      const scoredPosts = posts.map(post => {
+        const isMine = (post.author.id==userId) ? 0 : 1;
+        const isFollowed = followedUserIds.includes(post.author.id) ? 5 : 1; // 5x boost for followed users
+    
+        const baseScore = (
+          Math.sqrt(post.totalLike + post.totalComment + Math.sqrt(post.totalView)) * 
+          isFollowed*isMine - (1-isMine)
+        ) ;
+        return { post, score: baseScore };
       });
-    console.log('getNewsfeed3');
-    // Get posts and calculate scores
-    const posts = await queryBuilder.getMany();
-    const scoredPosts = posts.map(post => {
-      const isFollowed = followedUserIds.includes(post.author.id) ? 5 : 1; // 5x boost for followed users
-  
-      const baseScore = (
-        Math.sqrt(post.totalLike + post.totalComment + Math.sqrt(post.totalView)) * 
-        isFollowed
-      ) ;
-  
-      return { post, score: baseScore };
-    });
-    console.log('getNewsfeed4');
-    // Sort by score and get top posts
-    scoredPosts.sort((a, b) => b.score - a.score);
-    const topPosts = scoredPosts.slice(0, limit);
-  
-    // Add new posts to viewed posts
-    const newViewedPosts = topPosts
-      .filter(sp => sp.post.author.id !== userId) // Don't track own posts
-      .map(sp => sp.post);
-      
-    if (newViewedPosts.length > 0) {
-      user.viewedPosts.push(...newViewedPosts);
-      await this.usersRepository.save(user);
+      console.log('getNewsfeed4');
+      // Sort by score and get top posts
+      scoredPosts.sort((a, b) => b.score - a.score);
+      const topPosts = scoredPosts.slice(0, limit);
+    
+      // Add new posts to viewed posts
+      const newViewedPosts = topPosts
+        .filter(sp => sp.post.author.id !== userId) // Don't track own posts
+        .map(sp => sp.post);
+        
+      if (newViewedPosts.length > 0) {
+        user.viewedPosts.push(...newViewedPosts);
+        await this.usersRepository.save(user);
+      }
+    
+      return topPosts.map(sp => new LiteReponsePostDto(sp.post));
+    }catch(error){
+      console.log(error);
     }
-  
-    return topPosts.map(sp => new LiteReponsePostDto(sp.post));
   }
   async createComment(postId: number, createCommentDto: CreateCommentDto, userId: number): Promise<any> {
     const post = await this.postsRepository.findOne({ where: { id: postId } });
