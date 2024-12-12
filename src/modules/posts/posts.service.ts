@@ -367,15 +367,13 @@ export class PostsService {
     console.log('getNewsfeed3');
     // Get posts and calculate scores
     const posts = await queryBuilder.getMany();
-    const currentTime = new Date();
     const scoredPosts = posts.map(post => {
       const isFollowed = followedUserIds.includes(post.author.id) ? 5 : 1; // 5x boost for followed users
-      const hoursAway = (currentTime.getTime() - post.createdAt.getTime()) / (1000 * 60 * 60);
   
       const baseScore = (
         Math.sqrt(post.totalLike + post.totalComment + Math.sqrt(post.totalView)) * 
         isFollowed
-      ) / Math.sqrt(hoursAway / 2 + 1);
+      ) ;
   
       return { post, score: baseScore };
     });
